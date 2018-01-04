@@ -21,25 +21,26 @@ node() {
 
   stage("Clone sources and setup environment"){
     deleteDir()
-    def gitCoordinates = new Utils().retrieveGitCoordinates(this)
-    checkout([$class: 'GitSCM', branches: [[name: gitCoordinates.branch]], doGenerateSubmoduleConfigurations: false, extensions: [[$class: 'RelativeTargetDirectory', relativeTargetDir: APP_PATH]], submoduleCfg: [], userRemoteConfigs: [[url: gitCoordinates.url]]])
     dir(APP_PATH) {
+      checkout scm
       setupCommonPipelineEnvironment script: this, configFile: CONFIG_FILE
     }
     MTA_JAR_LOCATION = commonPipelineEnvironment.getConfigProperty('MTA_HOME')
     NEO_HOME = commonPipelineEnvironment.getConfigProperty('NEO_HOME')
     DEPLOY_HOST = commonPipelineEnvironment.getConfigProperty('DEPLOY_HOST')
     CI_DEPLOY_ACCOUNT = commonPipelineEnvironment.getConfigProperty('CI_DEPLOY_ACCOUNT')
-    proxy = commonPipelineEnvironment.getConfigProperty('proxy')
-    httpsProxy = commonPipelineEnvironment.getConfigProperty('httpsProxy')
+    neoCredentialsId = commonPipelineEnvironment.getConfigProperty('neoCredentialsId')
+    proxy = commonPipelineEnvironment.getConfigProperty('proxy') ?: ''
+    httpsProxy = commonPipelineEnvironment.getConfigProperty('httpsProxy') ?: ''
   }
 
   stage("Validate configuration"){
     echo '[INFO] Validating configuration.'
-    if (!MTA_JAR_LOCATION) error "The property 'MTA_JAR_LOCATION' is not configured. Please configure the property at '$CONFIG_FILE'."
+    if (!MTA_JAR_LOCATION) error "The property 'MTA_HOME' is not configured. Please configure the property at '$CONFIG_FILE'."
     if (!NEO_HOME) error "The property 'NEO_HOME' is not configured. Please configure the property at '$CONFIG_FILE'."
     if (!DEPLOY_HOST) error "The property 'DEPLOY_HOST' is not configured. Please configure the property at '$CONFIG_FILE'."
     if (!CI_DEPLOY_ACCOUNT) error "The property 'CI_DEPLOY_ACCOUNT' is not configured. Please configure the property at '$CONFIG_FILE'."
+    if (!neoCredentialsId) error "The property 'neoCredentialsId' is not configured. Please configure the property at '$CONFIG_FILE'."
     echo '[INFO] The validation was successful.'
   }
 
@@ -53,7 +54,9 @@ node() {
 
   stage("Build Fiori App"){
     dir(SRC){
-      MTAR_FILE_PATH = mtaBuild mtaJarLocation: MTA_JAR_LOCATION, buildTarget: 'NEO'
+      withEnv(["http_proxy=${proxy}", "https_proxy=${httpsProxy}"]) {
+        MTAR_FILE_PATH = mtaBuild mtaJarLocation: MTA_JAR_LOCATION, buildTarget: 'NEO'
+      }
     }
   }
   
