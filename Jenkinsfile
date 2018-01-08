@@ -37,6 +37,8 @@ node() {
   stage("Validate configuration"){
 		
 		sh "ls -la /opt/mta"
+	        sh "/usr/lib/jvm/java-1.8-openjdk/bin/java -version"
+	        sh "/usr/lib/jvm/java-1.8-openjdk/bin/java -jar /opt/mta/mta.jar -v"
 		
     echo '[INFO] Validating configuration.'
     if (!MTA_JAR_LOCATION) error "The property 'MTA_HOME' is not configured. Please configure the property at '$CONFIG_FILE'."
