@@ -35,6 +35,9 @@ node() {
   }
 
   stage("Validate configuration"){
+		
+		sh "ls -la /opt/mta"
+		
     echo '[INFO] Validating configuration.'
     if (!MTA_JAR_LOCATION) error "The property 'MTA_HOME' is not configured. Please configure the property at '$CONFIG_FILE'."
     if (!NEO_HOME) error "The property 'NEO_HOME' is not configured. Please configure the property at '$CONFIG_FILE'."
